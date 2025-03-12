@@ -228,7 +228,7 @@ function App() {
           <div className="mt-6 inline-flex flex-col gap-2 bg-[#1A1A1A] p-4 rounded-lg border border-[#333333]">
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <Wallet className="w-4 h-4" />
-              <span>Support API costs</span>
+              <span>Donation support API costs 🫶</span>
             </div>
             {donationAddresses.map(({ chain, address, color }) => (
               <div
