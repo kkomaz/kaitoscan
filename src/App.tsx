@@ -190,14 +190,25 @@ function App() {
   const donationAddresses = [
     {
       chain: 'EVM',
-      address: '0xcCedC29077dBfa242c2e4Fcbe8cFf8358A935F5F',
+      address: '0xceadd96e9298a257ebabc2832dbcbced39b6b013',
       color: '#7CFFD3',
     },
     {
       chain: 'Solana',
-      address: 'Cb6Ftq54QuTVH7G527tckzk1o2fD41fZ9tWm52ADuMzy',
+      address: 'FCc8aXe1C8x3EKfcDe8uAEzAa4ohCkR5H8xHUMf644b1',
       color: '#FFD37C',
     },
+  ];
+
+  const statsConfig = [
+    { key: 'l24h', label: '24h Yaps' },
+    { key: 'l48h', label: '48h Yaps' },
+    { key: 'l7d', label: '7d Yaps' },
+    { key: 'l30d', label: '30d Yaps' },
+    { key: 'l3m', label: '3m Yaps' },
+    { key: 'l6m', label: '6m Yaps' },
+    { key: 'l12m', label: '12m Yaps' },
+    { key: 'all', label: 'All Time' },
   ];
 
   return (
@@ -225,35 +236,37 @@ function App() {
           </div>
 
           {/* Donation Section */}
-          <div className="mt-6 inline-flex flex-col gap-2 bg-[#1A1A1A] p-4 rounded-lg border border-[#333333]">
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Wallet className="w-4 h-4" />
-              <span>Donation support API costs 🫶</span>
-            </div>
-            {donationAddresses.map(({ chain, address, color }) => (
-              <div
-                key={chain}
-                className="flex items-center gap-2 bg-[#0A0A0A] p-2 rounded border border-[#333333] text-sm"
-              >
-                <span style={{ color }}>{chain}</span>
-                <code className="font-mono text-gray-400 text-xs">
-                  {address}
-                </code>
-                <button
-                  onClick={() => handleCopyAddress(address)}
-                  className="ml-auto p-1 hover:bg-[#1A1A1A] rounded transition-colors"
-                  title="Copy address"
-                >
-                  <Copy
-                    className={`w-4 h-4 ${
-                      copiedAddress === address
-                        ? 'text-green-500'
-                        : 'text-gray-400'
-                    }`}
-                  />
-                </button>
+          <div className="mt-6 flex justify-center">
+            <div className="w-full max-w-md flex flex-col gap-2 bg-[#1A1A1A] p-4 rounded-lg border border-[#333333]">
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Wallet className="w-4 h-4" />
+                <span>Support API costs</span>
               </div>
-            ))}
+              {donationAddresses.map(({ chain, address, color }) => (
+                <div
+                  key={chain}
+                  className="flex items-center gap-2 bg-[#0A0A0A] p-2 rounded border border-[#333333] text-sm"
+                >
+                  <span style={{ color }}>{chain}</span>
+                  <code className="font-mono text-gray-400 text-xs overflow-x-auto">
+                    {address}
+                  </code>
+                  <button
+                    onClick={() => handleCopyAddress(address)}
+                    className="ml-auto flex-shrink-0 p-1 hover:bg-[#1A1A1A] rounded transition-colors"
+                    title="Copy address"
+                  >
+                    <Copy
+                      className={`w-4 h-4 ${
+                        copiedAddress === address
+                          ? 'text-green-500'
+                          : 'text-gray-400'
+                      }`}
+                    />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -382,42 +395,20 @@ function App() {
                     key={i}
                     className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4"
                   >
-                    <div className="bg-[#0A0A0A] p-4 rounded-lg border border-[#333333]">
-                      <h4 className="text-sm text-gray-400">24h Yaps</h4>
-                      <p
-                        className="text-xl font-bold"
-                        style={{ color: colors[i] }}
+                    {statsConfig.map(({ key, label }) => (
+                      <div
+                        key={key}
+                        className="bg-[#0A0A0A] p-4 rounded-lg border border-[#333333]"
                       >
-                        {data.yaps_l24h.toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="bg-[#0A0A0A] p-4 rounded-lg border border-[#333333]">
-                      <h4 className="text-sm text-gray-400">7d Yaps</h4>
-                      <p
-                        className="text-xl font-bold"
-                        style={{ color: colors[i] }}
-                      >
-                        {data.yaps_l7d.toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="bg-[#0A0A0A] p-4 rounded-lg border border-[#333333]">
-                      <h4 className="text-sm text-gray-400">30d Yaps</h4>
-                      <p
-                        className="text-xl font-bold"
-                        style={{ color: colors[i] }}
-                      >
-                        {data.yaps_l30d.toFixed(2)}
-                      </p>
-                    </div>
-                    <div className="bg-[#0A0A0A] p-4 rounded-lg border border-[#333333]">
-                      <h4 className="text-sm text-gray-400">All Time Yaps</h4>
-                      <p
-                        className="text-xl font-bold"
-                        style={{ color: colors[i] }}
-                      >
-                        {data.yaps_all.toFixed(2)}
-                      </p>
-                    </div>
+                        <h4 className="text-sm text-gray-400">{label}</h4>
+                        <p
+                          className="text-xl font-bold"
+                          style={{ color: colors[i] }}
+                        >
+                          {data[`yaps_${key}` as keyof YapsData].toFixed(2)}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 )
             )}
