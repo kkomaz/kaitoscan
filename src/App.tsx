@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { Search, TrendingUp, Users, PlusCircle } from 'lucide-react';
+import {
+  Search,
+  TrendingUp,
+  Users,
+  PlusCircle,
+  MinusCircle,
+} from 'lucide-react';
 import { YapsData } from './types';
 import {
   LineChart,
@@ -84,10 +90,27 @@ function App() {
   };
 
   const addUserInput = () => {
-    if (usernames.length < 3) {
+    if (usernames.length < 2) {
       setUsernames([...usernames, '']);
       setUserData([...userData, null]);
     }
+  };
+
+  const removeUserInput = (index: number) => {
+    const newUsernames = usernames.filter((_, i) => i !== index);
+    const newUserData = userData.filter((_, i) => i !== index);
+    setUsernames(newUsernames);
+    setUserData(newUserData);
+  };
+
+  const handleInputChange = (value: string, index: number) => {
+    const newUsernames = [...usernames];
+    newUsernames[index] = value.trim();
+    setUsernames(newUsernames);
+
+    const newUserData = [...userData];
+    newUserData[index] = null; // Clear data for the changed input
+    setUserData(newUserData);
   };
 
   const chartData = userData.some((data) => data)
@@ -173,16 +196,18 @@ function App() {
                 <input
                   type="text"
                   value={username}
-                  onChange={(e) => {
-                    const newUsernames = [...usernames];
-                    newUsernames[index] = e.target.value.trim();
-                    setUsernames(newUsernames);
-                  }}
+                  onChange={(e) => handleInputChange(e.target.value, index)}
                   placeholder={`Enter X username ${index + 1} (without @)`}
                   className="w-full pl-4 pr-10 py-2 rounded-lg bg-[#1A1A1A] border border-[#333333] text-white placeholder-gray-500 focus:ring-2 focus:ring-[#7CFFD3] focus:border-transparent"
                   disabled={loading}
                 />
-                <Search className="absolute right-3 top-2.5 text-gray-500" />
+                <Search className="absolute right-10 top-2.5 text-gray-500" />
+                {index > 0 && (
+                  <MinusCircle
+                    className="absolute right-3 top-2.5 text-red-500 cursor-pointer"
+                    onClick={() => removeUserInput(index)}
+                  />
+                )}
               </div>
             ))}
             <button
@@ -200,7 +225,7 @@ function App() {
               )}
             </button>
           </form>
-          {userData.some((data) => data) && usernames.length < 3 && (
+          {userData.some((data) => data) && usernames.length < 2 && (
             <button
               type="button"
               onClick={addUserInput}
