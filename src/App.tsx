@@ -6,6 +6,8 @@ import {
   PlusCircle,
   MinusCircle,
   AlertCircle,
+  Wallet,
+  Copy,
 } from 'lucide-react';
 import { YapsData } from './types';
 import {
@@ -18,17 +20,29 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { XIcon } from './components/XIcon';
 
 function App() {
   const [usernames, setUsernames] = useState(['']);
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState<(YapsData | null)[]>([]);
   const [error, setError] = useState('');
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
   // Reset error when usernames change
   useEffect(() => {
     setError('');
   }, [usernames]);
+
+  // Reset copied state after 2 seconds
+  useEffect(() => {
+    if (copiedAddress) {
+      const timer = setTimeout(() => {
+        setCopiedAddress(null);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [copiedAddress]);
 
   // Ensure userData array length matches usernames array length
   useEffect(() => {
@@ -42,6 +56,11 @@ function App() {
       });
     }
   }, [usernames.length]);
+
+  const handleCopyAddress = (address: string) => {
+    navigator.clipboard.writeText(address);
+    setCopiedAddress(address);
+  };
 
   const fetchYapsData = async (username: string, index: number) => {
     if (!username.trim()) return;
@@ -168,6 +187,19 @@ function App() {
 
   const colors = ['#7CFFD3', '#FFD37C'];
 
+  const donationAddresses = [
+    {
+      chain: 'EVM',
+      address: '0xceadd96e9298a257ebabc2832dbcbced39b6b013',
+      color: '#7CFFD3',
+    },
+    {
+      chain: 'Solana',
+      address: 'FCc8aXe1C8x3EKfcDe8uAEzAa4ohCkR5H8xHUMf644b1',
+      color: '#FFD37C',
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       <div className="container mx-auto px-4 py-8">
@@ -176,9 +208,53 @@ function App() {
             <TrendingUp className="w-8 h-8" />
             Yaps Analytics Dashboard
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 mb-2">
             Compare attention metrics between X users using Kaito Yaps
           </p>
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+            <span>Made with 💚 by</span>
+            <a
+              href="https://x.com/itskkoma"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[#7CFFD3] hover:text-[#5BDFB3] transition-colors"
+            >
+              <XIcon className="w-4 h-4" />
+              @itskkoma
+            </a>
+          </div>
+
+          {/* Donation Section */}
+          <div className="mt-6 inline-flex flex-col gap-2 bg-[#1A1A1A] p-4 rounded-lg border border-[#333333]">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <Wallet className="w-4 h-4" />
+              <span>Support API costs</span>
+            </div>
+            {donationAddresses.map(({ chain, address, color }) => (
+              <div
+                key={chain}
+                className="flex items-center gap-2 bg-[#0A0A0A] p-2 rounded border border-[#333333] text-sm"
+              >
+                <span style={{ color }}>{chain}</span>
+                <code className="font-mono text-gray-400 text-xs">
+                  {address}
+                </code>
+                <button
+                  onClick={() => handleCopyAddress(address)}
+                  className="ml-auto p-1 hover:bg-[#1A1A1A] rounded transition-colors"
+                  title="Copy address"
+                >
+                  <Copy
+                    className={`w-4 h-4 ${
+                      copiedAddress === address
+                        ? 'text-green-500'
+                        : 'text-gray-400'
+                    }`}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="max-w-xl mx-auto mb-8">
