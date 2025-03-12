@@ -190,7 +190,7 @@ function App() {
   const donationAddresses = [
     {
       chain: 'EVM',
-      address: '0xceadd96e9298a257ebabc2832dbcbced39b6b013',
+      address: '0xcCedC29077dBfa242c2e4Fcbe8cFf8358A935F5F',
       color: '#7CFFD3',
     },
     {
