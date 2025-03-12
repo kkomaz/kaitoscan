@@ -8,11 +8,15 @@ import {
   AlertCircle,
   Wallet,
   Copy,
+  BarChart as BarChartIcon,
+  LineChart as LineChartIcon,
 } from 'lucide-react';
 import { YapsData } from './types';
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -28,6 +32,7 @@ function App() {
   const [userData, setUserData] = useState<(YapsData | null)[]>([]);
   const [error, setError] = useState('');
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [chartType, setChartType] = useState<'line' | 'bar'>('line');
 
   // Reset error when usernames change
   useEffect(() => {
@@ -211,6 +216,80 @@ function App() {
     { key: 'all', label: 'All Time' },
   ];
 
+  const renderChart = () => {
+    const commonProps = {
+      data: chartData,
+      margin: { top: 20, right: 30, left: 40, bottom: 5 },
+    };
+
+    const commonGridProps = {
+      strokeDasharray: '3 3',
+      stroke: '#333333',
+    };
+
+    if (chartType === 'bar') {
+      return (
+        <BarChart {...commonProps} layout="vertical">
+          <CartesianGrid {...commonGridProps} />
+          <XAxis type="number" stroke="#666666" />
+          <YAxis dataKey="name" type="category" stroke="#666666" width={80} />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: '#1A1A1A',
+              border: '1px solid #333333',
+              borderRadius: '8px',
+              color: '#fff',
+            }}
+          />
+          <Legend />
+          {userData.map(
+            (data, i) =>
+              data && (
+                <Bar
+                  key={i}
+                  dataKey={`yaps${i + 1}`}
+                  fill={colors[i]}
+                  name={`@${data.username}`}
+                />
+              )
+          )}
+        </BarChart>
+      );
+    }
+
+    return (
+      <LineChart {...commonProps}>
+        <CartesianGrid {...commonGridProps} />
+        <XAxis dataKey="name" stroke="#666666" />
+        <YAxis stroke="#666666" />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: '#1A1A1A',
+            border: '1px solid #333333',
+            borderRadius: '8px',
+            color: '#fff',
+          }}
+        />
+        <Legend />
+        {userData.map(
+          (data, i) =>
+            data && (
+              <Line
+                key={i}
+                type="monotone"
+                dataKey={`yaps${i + 1}`}
+                stroke={colors[i]}
+                strokeWidth={2}
+                dot={{ fill: colors[i] }}
+                name={`@${data.username}`}
+                isAnimationActive={false}
+              />
+            )
+        )}
+      </LineChart>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
       <div className="container mx-auto px-4 py-8">
@@ -350,40 +429,38 @@ function App() {
             </div>
 
             <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-4 text-[#7CFFD3]">
-                Attention Metrics Over Time
-              </h3>
-              <div className="h-[400px]">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-[#7CFFD3]">
+                  Attention Metrics Over Time
+                </h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setChartType('line')}
+                    className={`p-2 rounded-lg transition-colors ${
+                      chartType === 'line'
+                        ? 'bg-[#7CFFD3] text-black'
+                        : 'bg-[#333333] text-gray-400 hover:bg-[#444444]'
+                    }`}
+                    title="Line Chart"
+                  >
+                    <LineChartIcon className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => setChartType('bar')}
+                    className={`p-2 rounded-lg transition-colors ${
+                      chartType === 'bar'
+                        ? 'bg-[#7CFFD3] text-black'
+                        : 'bg-[#333333] text-gray-400 hover:bg-[#444444]'
+                    }`}
+                    title="Bar Chart"
+                  >
+                    <BarChartIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+              <div className="h-[600px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#333333" />
-                    <XAxis dataKey="name" stroke="#666666" />
-                    <YAxis stroke="#666666" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1A1A1A',
-                        border: '1px solid #333333',
-                        borderRadius: '8px',
-                        color: '#fff',
-                      }}
-                    />
-                    <Legend />
-                    {userData.map(
-                      (data, i) =>
-                        data && (
-                          <Line
-                            key={i}
-                            type="monotone"
-                            dataKey={`yaps${i + 1}`}
-                            stroke={colors[i]}
-                            strokeWidth={2}
-                            dot={{ fill: colors[i] }}
-                            name={`@${data.username}`}
-                            isAnimationActive={false}
-                          />
-                        )
-                    )}
-                  </LineChart>
+                  {renderChart()}
                 </ResponsiveContainer>
               </div>
             </div>
