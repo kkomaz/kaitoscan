@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   TrendingUp,
   Users,
   PlusCircle,
   MinusCircle,
+  AlertCircle,
 } from 'lucide-react';
 import { YapsData } from './types';
 import {
@@ -24,19 +25,31 @@ function App() {
   const [userData, setUserData] = useState<(YapsData | null)[]>([]);
   const [error, setError] = useState('');
 
-  const fetchYapsData = async (username: string, index: number) => {
-    if (!username) return;
-
-    setLoading(true);
+  // Reset error when usernames change
+  useEffect(() => {
     setError('');
-    const newUserData = [...userData];
-    newUserData[index] = null;
-    setUserData(newUserData);
+  }, [usernames]);
+
+  // Ensure userData array length matches usernames array length
+  useEffect(() => {
+    if (userData.length !== usernames.length) {
+      setUserData((prev) => {
+        const newData = [...prev];
+        while (newData.length < usernames.length) {
+          newData.push(null);
+        }
+        return newData.slice(0, usernames.length);
+      });
+    }
+  }, [usernames.length]);
+
+  const fetchYapsData = async (username: string, index: number) => {
+    if (!username.trim()) return;
 
     try {
       const response = await fetch(
         `https://kaitoscan.com/.netlify/functions/yaps?username=${encodeURIComponent(
-          username
+          username.trim()
         )}`,
         {
           method: 'GET',
@@ -49,132 +62,111 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error(
-            `User @${username} not found. Please check the username and try again.`
-          );
-        } else if (response.status === 429) {
-          throw new Error(
-            'Rate limit exceeded. Please wait a moment and try again.'
-          );
-        } else if (data.error) {
-          throw new Error(data.error);
-        } else {
-          throw new Error('Failed to fetch data. Please try again later.');
-        }
+        throw new Error(
+          response.status === 404
+            ? `User @${username} not found. Please check the username and try again.`
+            : response.status === 429
+            ? 'Rate limit exceeded. Please wait a moment and try again.'
+            : data.error || 'Failed to fetch data. Please try again later.'
+        );
       }
 
       if (!data || typeof data.yaps_all === 'undefined') {
         throw new Error('Invalid data received from the server.');
       }
 
-      newUserData[index] = data;
-      setUserData(newUserData);
+      setUserData((prev) => {
+        const newData = [...prev];
+        newData[index] = data;
+        return newData;
+      });
     } catch (err) {
       console.error('API Error:', err);
       setError(
-        err instanceof Error
-          ? err.message
-          : 'An unexpected error occurred. Please try again.'
+        err instanceof Error ? err.message : 'An unexpected error occurred.'
+      );
+
+      // Clear the data for this index on error
+      setUserData((prev) => {
+        const newData = [...prev];
+        newData[index] = null;
+        return newData;
+      });
+      throw err; // Re-throw to handle in the Promise.all
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    const validUsernames = usernames.filter((username) => username.trim());
+    if (validUsernames.length === 0) {
+      setError('Please enter at least one username.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Fetch data for all valid usernames
+      await Promise.all(
+        usernames.map((username, index) => {
+          if (username.trim()) {
+            return fetchYapsData(username, index);
+          }
+          return Promise.resolve();
+        })
       );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    usernames.forEach((username, index) => {
-      if (username) fetchYapsData(username, index);
-    });
-  };
-
   const addUserInput = () => {
     if (usernames.length < 2) {
-      setUsernames([...usernames, '']);
-      setUserData([...userData, null]);
+      setUsernames((prev) => [...prev, '']);
+      setUserData((prev) => [...prev, null]);
     }
   };
 
   const removeUserInput = (index: number) => {
-    const newUsernames = usernames.filter((_, i) => i !== index);
-    const newUserData = userData.filter((_, i) => i !== index);
-    setUsernames(newUsernames);
-    setUserData(newUserData);
+    setUsernames((prev) => prev.filter((_, i) => i !== index));
+    setUserData((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleInputChange = (value: string, index: number) => {
-    const newUsernames = [...usernames];
-    newUsernames[index] = value.trim();
-    setUsernames(newUsernames);
-
-    const newUserData = [...userData];
-    newUserData[index] = null; // Clear data for the changed input
-    setUserData(newUserData);
+    setUsernames((prev) => {
+      const newUsernames = [...prev];
+      newUsernames[index] = value.trim();
+      return newUsernames;
+    });
   };
 
+  const timeframes = [
+    { key: 'l24h', label: '24h' },
+    { key: 'l48h', label: '48h' },
+    { key: 'l7d', label: '7d' },
+    { key: 'l30d', label: '30d' },
+    { key: 'l3m', label: '3m' },
+    { key: 'l6m', label: '6m' },
+    { key: 'l12m', label: '12m' },
+    { key: 'all', label: 'All Time' },
+  ];
+
   const chartData = userData.some((data) => data)
-    ? [
-        {
-          name: '24h',
-          ...userData.reduce(
-            (acc, data, i) => ({ ...acc, [`yaps${i + 1}`]: data?.yaps_l24h }),
-            {}
-          ),
-        },
-        {
-          name: '48h',
-          ...userData.reduce(
-            (acc, data, i) => ({ ...acc, [`yaps${i + 1}`]: data?.yaps_l48h }),
-            {}
-          ),
-        },
-        {
-          name: '7d',
-          ...userData.reduce(
-            (acc, data, i) => ({ ...acc, [`yaps${i + 1}`]: data?.yaps_l7d }),
-            {}
-          ),
-        },
-        {
-          name: '30d',
-          ...userData.reduce(
-            (acc, data, i) => ({ ...acc, [`yaps${i + 1}`]: data?.yaps_l30d }),
-            {}
-          ),
-        },
-        {
-          name: '3m',
-          ...userData.reduce(
-            (acc, data, i) => ({ ...acc, [`yaps${i + 1}`]: data?.yaps_l3m }),
-            {}
-          ),
-        },
-        {
-          name: '6m',
-          ...userData.reduce(
-            (acc, data, i) => ({ ...acc, [`yaps${i + 1}`]: data?.yaps_l6m }),
-            {}
-          ),
-        },
-        {
-          name: '12m',
-          ...userData.reduce(
-            (acc, data, i) => ({ ...acc, [`yaps${i + 1}`]: data?.yaps_l12m }),
-            {}
-          ),
-        },
-        {
-          name: 'All Time',
-          ...userData.reduce(
-            (acc, data, i) => ({ ...acc, [`yaps${i + 1}`]: data?.yaps_all }),
-            {}
-          ),
-        },
-      ]
+    ? timeframes.map(({ key, label }) => ({
+        name: label,
+        ...userData.reduce((acc, data, i) => {
+          if (data) {
+            acc[`yaps${i + 1}`] = data[`yaps_${key}` as keyof YapsData];
+          }
+          return acc;
+        }, {} as Record<string, number>),
+      }))
     : [];
 
-  const colors = ['#7CFFD3', '#FFD37C', '#FF7C7C'];
+  const colors = ['#7CFFD3', '#FFD37C'];
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white">
@@ -185,7 +177,7 @@ function App() {
             Yaps Analytics Dashboard
           </h1>
           <p className="text-gray-400">
-            Analyze attention metrics for X users using Kaito Yaps
+            Compare attention metrics between X users using Kaito Yaps
           </p>
         </div>
 
@@ -212,11 +204,13 @@ function App() {
             ))}
             <button
               type="submit"
-              disabled={loading || usernames.every((username) => !username)}
+              disabled={
+                loading || usernames.every((username) => !username.trim())
+              }
               className="px-6 py-2 bg-[#7CFFD3] text-black font-semibold rounded-lg hover:bg-[#5BDFB3] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
             >
               {loading ? (
-                <span className="flex items-center gap-2">
+                <span className="flex items-center justify-center gap-2">
                   <span className="animate-spin">⏳</span>
                   Loading...
                 </span>
@@ -225,6 +219,7 @@ function App() {
               )}
             </button>
           </form>
+
           {userData.some((data) => data) && usernames.length < 2 && (
             <button
               type="button"
@@ -232,11 +227,13 @@ function App() {
               className="flex items-center gap-2 text-[#7CFFD3] hover:text-[#5BDFB3] transition-colors duration-200 mt-4"
             >
               <PlusCircle className="w-6 h-6" />
-              Add another user
+              Compare with another user
             </button>
           )}
+
           {error && (
-            <div className="mt-4 p-4 bg-red-900/20 border border-red-800 rounded-lg">
+            <div className="mt-4 p-4 bg-red-900/20 border border-red-800 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
               <p className="text-red-400">{error}</p>
             </div>
           )}
@@ -293,6 +290,7 @@ function App() {
                             strokeWidth={2}
                             dot={{ fill: colors[i] }}
                             name={`@${data.username}`}
+                            isAnimationActive={false}
                           />
                         )
                     )}
