@@ -195,7 +195,7 @@ function App() {
     },
     {
       chain: 'Solana',
-      address: 'FCc8aXe1C8x3EKfcDe8uAEzAa4ohCkR5H8xHUMf644b1',
+      address: 'Cb6Ftq54QuTVH7G527tckzk1o2fD41fZ9tWm52ADuMzy',
       color: '#FFD37C',
     },
   ];
