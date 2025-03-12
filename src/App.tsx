@@ -195,12 +195,12 @@ function App() {
   const donationAddresses = [
     {
       chain: 'EVM',
-      address: '0xceadd96e9298a257ebabc2832dbcbced39b6b013',
+      address: '0xcCedC29077dBfa242c2e4Fcbe8cFf8358A935F5F',
       color: '#7CFFD3',
     },
     {
       chain: 'Solana',
-      address: 'FCc8aXe1C8x3EKfcDe8uAEzAa4ohCkR5H8xHUMf644b1',
+      address: 'Cb6Ftq54QuTVH7G527tckzk1o2fD41fZ9tWm52ADuMzy',
       color: '#FFD37C',
     },
   ];
